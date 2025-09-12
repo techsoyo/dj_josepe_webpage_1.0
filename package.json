@@ -1,0 +1,46 @@
+{
+  "name": "dj-josep-webpage-monousuario",
+  "version": "1.0.0",
+  "description": "Aplicación web monousuario para DJ Josep - Full Stack",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm run backend:dev\" \"pnpm run frontend:dev\"",
+    "dev:backend": "cd backend && pnpm run dev",
+    "dev:frontend": "cd frontend && pnpm run dev",
+    "build": "pnpm run build:frontend && pnpm run build:backend",
+    "build:frontend": "cd frontend && pnpm run build",
+    "build:backend": "cd backend && pnpm run build",
+    "start": "pnpm run start:backend",
+    "start:backend": "cd backend && pnpm start",
+    "start:frontend": "cd frontend && pnpm run preview",
+    "install:all": "pnpm install && cd backend && pnpm install && cd ../frontend && pnpm install",
+    "clean": "rm -rf node_modules backend/node_modules frontend/node_modules pnpm-lock.yaml backend/pnpm-lock.yaml frontend/pnpm-lock.yaml",
+    "setup": "pnpm run install:all && cd backend && pnpm exec prisma generate && pnpm exec prisma db push && pnpm exec prisma db seed",
+    "db:reset": "cd backend && pnpm exec prisma db push --force-reset && pnpm exec prisma db seed",
+    "lint": "cd frontend && pnpm run lint",
+    "test": "echo \"No hay tests configurados aún\" && exit 0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "author": "DJ Josep",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dj-josep/webpage-monousuario.git"
+  },
+  "keywords": [
+    "dj",
+    "webpage",
+    "react",
+    "vite",
+    "node",
+    "express",
+    "prisma",
+    "fullstack"
+  ]
+}

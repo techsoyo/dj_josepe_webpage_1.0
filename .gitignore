@@ -1,0 +1,203 @@
+# ===============================================
+# DJ JOSEP PROJECT - GITIGNORE
+# ===============================================
+# ✅ Adaptado para proyecto Vite + Node.js monousuario
+
+# ===== ARCHIVOS DE DESARROLLO Y TEMPORALES =====
+info-x-desarrollo/
+*.zip
+*.bat
+
+# ===== DEPENDENCIES =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ===== BUILD OUTPUTS =====
+dist/
+build/
+.vite/
+.next/
+out/
+
+# ===== CACHE =====
+.cache/
+.parcel-cache/
+.vite-cache/
+.turbo/
+
+# ===== ENVIRONMENT VARIABLES =====
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+# ===== LOGS =====
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ===== RUNTIME DATA =====
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# ===== COVERAGE DIRECTORY =====
+lib-cov
+coverage/
+*.lcov
+.nyc_output
+
+# ===== INSTRUMENTED LIBS =====
+lib-cov
+
+# ===== DEPENDENCY DIRECTORIES =====
+node_modules/
+jspm_packages/
+
+# ===== OPTIONAL NPM CACHE =====
+.npm
+
+# ===== OPTIONAL ESLINT CACHE =====
+.eslintcache
+
+# ===== MICROBUNDLE CACHE =====
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# ===== OPTIONAL REPL HISTORY =====
+.node_repl_history
+
+# ===== OUTPUT OF 'NPM PACK' =====
+*.tgz
+
+# ===== YARN INTEGRITY FILE =====
+.yarn-integrity
+
+# ===== PARCEL-BUNDLER CACHE =====
+.cache
+.parcel-cache
+
+# ===== VITE =====
+.vite
+dist-ssr
+*.local
+
+# ===== ROLLUP =====
+.rollup.cache
+
+# ===== TYPESCRIPT =====
+*.tsbuildinfo
+
+# ===== TESTING =====
+coverage/
+.nyc_output
+junit.xml
+
+# ===== STORYBOOK =====
+.out
+.storybook-out
+storybook-static
+
+# ===== TEMPORARY FOLDERS =====
+tmp/
+temp/
+
+# ===== EDITORS =====
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ===== OS GENERATED FILES =====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ===== UPLOADS Y ARCHIVOS GENERADOS =====
+uploads/
+public/uploads/
+src/assets/uploads/
+
+# ===== DATABASE =====
+*.sqlite
+*.sqlite3
+*.db
+database.sqlite
+src/db/*.sqlite
+
+# ===== BACKUP FILES =====
+*.backup
+*.bak
+*.tmp
+
+# ===== DOCKER =====
+.dockerignore
+
+# ===== TERRAFORM =====
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# ===== CERTIFICATES =====
+*.pem
+*.key
+*.crt
+*.p12
+
+# ===== SENTRY =====
+.sentryclirc
+
+# ===== PRISMA =====
+# Keep schema and migrations, ignore generated client
+!prisma/schema.prisma
+!prisma/migrations/
+prisma/dev.db*
+
+# ===== ESPECÍFICOS DEL PROYECTO =====
+# Archivos de configuración local
+config.local.js
+config.local.json
+
+# Archivos de datos de desarrollo
+dev-data/
+test-data/
+
+# Archivos de análisis
+bundle-analyzer/
+lighthouse-reports/
+
+# Archivos de deployment temporal
+deploy/
+deployment/
+
+# ===== COMENTARIOS ÚTILES =====
+# Para forzar inclusión de carpetas vacías, agregar .gitkeep
+# Para ignorar todo excepto un archivo: 
+# folder/*
+# !folder/important.txt
+
+# Para verificar qué archivos están siendo ignorados:
+# git status --ignored

@@ -1,0 +1,66 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "DJ Josep Backend - Single User Admin Panel",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "dev-fast": "node server.js",
+    "seed": "node prisma/seed.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src --ext js",
+    "format": "prettier --write src/**/*.js"
+  },
+  "keywords": [
+    "dj",
+    "admin-panel",
+    "backend",
+    "express",
+    "mysql",
+    "single-user"
+  ],
+  "author": "MiniMax Agent",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^1.20.0",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^4.18.2",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^8.1.0",
+    "express-validator": "^7.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.1",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.14.5",
+    "nodemailer": "^7.0.6",
+    "sharp": "^0.32.6",
+    "sql.js": "^1.13.0",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.11",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.3",
+    "prettier": "^3.2.5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tu-usuario/dj-backend-single-user.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tu-usuario/dj-backend-single-user/issues"
+  },
+  "homepage": "https://github.com/tu-usuario/dj-backend-single-user#readme"
+}
