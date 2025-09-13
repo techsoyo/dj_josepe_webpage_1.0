@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Refactorización del Frontend: De Backend Prisma a MySQL</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'serif': ['Playfair Display', 'serif'],
+            'sans': ['Inter', 'sans-serif']
+          },
+          colors: {
+            primary: '#1e293b',
+            secondary: '#475569',
+            accent: '#0f172a',
+            neutral: '#f8fafc',
+            'warm-gray': '#f1f5f9'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .toc-fixed {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 280px;
+      height: 100vh;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      border-right: 1px solid #cbd5e1;
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .main-content {
+      margin-left: 280px;
+      min-height: 100vh;
+    }
+
+    .toc-link {
+      display: block;
+      padding: 0.5rem 0;
+      color: #475569;
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      padding-left: 1rem;
+      transition: all 0.2s ease;
+    }
+
+    .toc-link:hover {
+      color: #1e293b;
+      border-left-color: #0f172a;
+      background-color: rgba(15, 23, 42, 0.05);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: center;
+      min-height: 60vh;
+    }
+
+    .code-block {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      border-radius: 8px;
+      padding: 1.5rem;
+      color: #e2e8f0;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+
+    .workflow-step {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .workflow-step:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .mermaid-container {
+      display: flex;
+      justify-content: center;
+      min-height: 300px;
+      max-height: 800px;
+      background: #ffffff;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 30px;
+      margin: 30px 0;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mermaid-container .mermaid {
+      width: 100%;
+      max-width: 100%;
+      height: 100%;
+      cursor: grab;
+      transition: transform 0.3s ease;
+      transform-origin: center center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      touch-action: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    .mermaid-container .mermaid svg {
+      max-width: 100%;
+      height: 100%;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .mermaid-container .mermaid:active {
+      cursor: grabbing;
+    }
+
+    .mermaid-container.zoomed .mermaid {
+      height: 100%;
+      width: 100%;
+      cursor: grab;
+    }
+
+    .mermaid-controls {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      gap: 10px;
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 8px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .mermaid-control-btn {
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      padding: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: #374151;
+      font-size: 14px;
+      min-width: 36px;
+      height: 36px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mermaid-control-btn:hover {
+      background: #f8fafc;
+      border-color: #3b82f6;
+      color: #3b82f6;
+      transform: translateY(-1px);
+    }
+
+    .mermaid-control-btn:active {
+      transform: scale(0.95);
+    }
+
+    @media (max-width: 1024px) {
+      .toc-fixed {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+
+      .toc-fixed.open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .mermaid-control-btn:not(.reset-zoom) {
+        display: none;
+      }
+
+      .mermaid-controls {
+        top: auto;
+        bottom: 15px;
+        right: 15px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hero-grid h1 {
+        font-size: 2.5rem;
+      }
+
+      .hero-grid p {
+        font-size: 1rem;
+      }
+
+      .hero-grid .code-block {
+        font-size: 0.75rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero-grid h1 {
+        font-size: 2rem;
+      }
+
+      .hero-grid p {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-neutral text-primary font-sans">
+  <!-- Table of Contents -->
+  <nav class="toc-fixed">
+    <div class="mb-8">
+      <h3 class="font-serif text-lg font-bold text-primary mb-4">Tabla de Contenidos</h3>
+    </div>
+
+    <div class="space-y-2">
+      <a href="#introduction" class="toc-link">Introducción</a>
+      <a href="#system-prompt" class="toc-link">Marco del Sistema</a>
+      <a href="#user-prompt" class="toc-link">Implementación del Usuario</a>
+      <a href="#workflow" class="toc-link">Flujo de Trabajo de Refactorización</a>
+      <a href="#security" class="toc-link">Seguridad y Validación</a>
+      <a href="#performance" class="toc-link">Optimización de Rendimiento</a>
+      <a href="#directory-structure" class="toc-link">Estructura de Directorios</a>
+      <a href="#implementation" class="toc-link">Guía de Implementación</a>
+      <a href="#conclusion" class="toc-link">Conclusión</a>
+    </div>
+
+    <div class="mt-8 pt-6 border-t border-slate-200">
+      <p class="text-xs text-secondary">
+        <i class="fas fa-code mr-2"></i>
+        Guía de Refactorización para Frontend Next.js
+      </p>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Hero Section -->
+    <section id="introduction" class="bg-gradient-to-br from-slate-50 to-slate-100 py-16">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="hero-grid">
+          <div class="space-y-6">
+            <h1 class="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-primary leading-tight">
+              <em class="italic text-secondary">Refactorización</em>
+              <br>
+              Frontend Next.js
+            </h1>
+            <p class="text-lg text-secondary leading-relaxed">
+              Una guía completa para migrar una aplicación frontend desde un backend basado en Prisma a una arquitectura
+              impulsada por MySQL mientras se preserva la integridad lógica y se mejora la seguridad.
+            </p>
+            <div class="flex items-center space-x-4 text-sm text-secondary">
+              <span><i class="fab fa-react mr-2"></i>Next.js</span>
+              <span><i class="fas fa-database mr-2"></i>MySQL</span>
+              <span><i class="fas fa-shield-alt mr-2"></i>Seguridad Primero</span>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="text-cyan-300 mb-2">// Estrategia de Refactorización</div>
+            <div class="text-green-300 mb-2">✓ Preservar lógica original</div>
+            <div class="text-green-300 mb-2">✓ Mantener estructura de carpetas</div>
+            <div class="text-green-300 mb-2">✓ Mejorar seguridad</div>
+            <div class="text-green-300 mb-2">✓ Optimizar rendimiento</div>
+            <div class="text-yellow-300 mt-4">> new-frontend/</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- System Prompt Section -->
+    <section id="system-prompt" class="py-16 bg-white">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="font-serif text-3xl font-bold text-primary mb-8">Marco del Sistema</h2>
+
+        <div class="prose prose-lg max-w-none">
+          <p class="text-secondary mb-6">
+            El marco del sistema establece el rol de la IA como desarrollador full-stack senior con experiencia
+            especializada en Next.js, React y arquitectura web moderna. Proporciona una guía completa para refactorizar
+            una aplicación frontend mientras se mantiene una estricta adherencia a estándares de calidad, seguridad y
+            rendimiento.
+          </p>
+
+          <div class="bg-slate-50 border-l-4 border-primary p-6 my-8">
+            <h3 class="font-serif text-xl font-bold text-primary mb-4">Definición de Rol</h3>
+            <p class="text-secondary">
+              <strong>Desarrollador Full-Stack Senior</strong> con profunda experiencia en Next.js, React y prácticas
+              modernas de desarrollo web. Esta persona es responsable de una revisión completa de una aplicación
+              frontend
+              existente, actuando como arquitecto e implementador.
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-warm-gray p-6 rounded-lg">
+              <h4 class="font-semibold text-primary mb-3">
+                <i class="fas fa-target mr-2"></i>Objetivos Primarios
+              </h4>
+              <ul class="space-y-2 text-secondary">
+                <li>• Refactorizar frontend Next.js de Prisma a MySQL</li>
+                <li>• Preservar lógica y comportamiento original de la aplicación</li>
+                <li>• Mantener integridad exacta de la estructura de carpetas</li>
+                <li>• Implementar medidas de seguridad completas</li>
+              </ul>
+            </div>
+
+            <div class="bg-warm-gray p-6 rounded-lg">
+              <h4 class="font-semibold text-primary mb-3">
+                <i class="fas fa-shield-alt mr-2"></i>Responsabilidades Clave
+              </h4>
+              <ul class="space-y-2 text-secondary">
+                <li>• Aplicación de calidad de código y mejores prácticas</li>
+                <li>• Implementación de seguridad (protección XSS, CSRF)</li>
+                <li>• Técnicas de optimización de rendimiento</li>
+                <li>• Validación y sanitización de entrada</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- User Prompt Section -->
+    <section id="user-prompt" class="py-16 bg-slate-50">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="font-serif text-3xl font-bold text-primary mb-8">Implementación del Usuario</h2>
+
+        <div class="space-y-6">
+          <div class="workflow-step" onclick="toggleDetails('initial-setup')">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-primary text-lg">
+                <i class="fas fa-folder-plus mr-3 text-blue-500"></i>
+                Configuración Inicial y Estructura del Proyecto
+              </h3>
+              <i class="fas fa-chevron-down text-secondary"></i>
+            </div>
+            <div id="initial-setup" class="hidden mt-4 pt-4 border-t border-slate-200">
+              <p class="text-secondary mb-4">
+                Establecer la base para la refactorización creando un espacio de trabajo limpio y verificando la
+                estructura del proyecto original.
+              </p>
+              <div class="code-block text-sm">
+                <div class="text-cyan-300">// Paso 1: Crear nuevo directorio</div>
+                <div>mkdir new-frontend</div>
+                <div class="text-cyan-300 mt-2">// Paso 2: Verificar estructura original</div>
+                <div>tree original-frontend/ -L 3</div>
+                <div class="text-cyan-300 mt-2">// Paso 3: Establecer flujo de trabajo</div>
+                <div>git init new-frontend</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="workflow-step" onclick="toggleDetails('refactoring-phases')">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-primary text-lg">
+                <i class="fas fa-layer-group mr-3 text-green-500"></i>
+                Proceso de Refactorización Paso a Paso
+              </h3>
+              <i class="fas fa-chevron-down text-secondary"></i>
+            </div>
+            <div id="refactoring-phases" class="hidden mt-4 pt-4 border-t border-slate-200">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="space-y-3">
+                  <div class="bg-white p-3 rounded border">
+                    <h4 class="font-medium text-primary">Fase 1: Archivos Raíz</h4>
+                    <p class="text-sm text-secondary">package.json, next.config.js, archivos de configuración</p>
+                  </div>
+                  <div class="bg-white p-3 rounded border">
+                    <h4 class="font-medium text-primary">Fase 2: Directorio App</h4>
+                    <p class="text-sm text-secondary">Páginas, layouts, rutas API</p>
+                  </div>
+                </div>
+                <div class="space-y-3">
+                  <div class="bg-white p-3 rounded border">
+                    <h4 class="font-medium text-primary">Fase 3: Componentes</h4>
+                    <p class="text-sm text-secondary">Componentes UI reutilizables, hooks</p>
+                  </div>
+                  <div class="bg-white p-3 rounded border">
+                    <h4 class="font-medium text-primary">Fase 4: Recursos</h4>
+                    <p class="text-sm text-secondary">Archivos públicos, estilos, utilidades</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="workflow-step" onclick="toggleDetails('file-protocol')">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-primary text-lg">
+                <i class="fas fa-file-code mr-3 text-purple-500"></i>
+                Protocolo de Refactorización Archivo por Archivo
+              </h3>
+              <i class="fas fa-chevron-down text-secondary"></i>
+            </div>
+            <div id="file-protocol" class="hidden mt-4 pt-4 border-t border-slate-200">
+              <ol class="space-y-3 text-secondary">
+                <li class="flex items-start">
+                  <span
+                    class="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-3 mt-1">1</span>
+                  <div>
+                    <strong>Copiar Archivo Original:</strong> Crear réplica exacta en directorio new-frontend
+                  </div>
+                </li>
+                <li class="flex items-start">
+                  <span
+                    class="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-3 mt-1">2</span>
+                  <div>
+                    <strong>Analizar e Identificar:</strong> Encontrar puntos de refactorización, problemas de
+                    seguridad,
+                    oportunidades de optimización
+                  </div>
+                </li>
+                <li class="flex items-start">
+                  <span
+                    class="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-3 mt-1">3</span>
+                  <div>
+                    <strong>Aplicar Mejoras:</strong> Implementar cambios mientras se preserva la lógica original
+                  </div>
+                </li>
+                <li class="flex items-start">
+                  <span
+                    class="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-3 mt-1">4</span>
+                  <div>
+                    <strong>Guardar y Reportar:</strong> Almacenar archivo refactorizado y proporcionar resumen de
+                    cambios
+                  </div>
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Refactoring Workflow -->
+    <section id="workflow" class="py-16 bg-white">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="font-serif text-3xl font-bold text-primary mb-8">Flujo de Trabajo de Refactorización Iterativa</h2>
+
+        <div class="bg-slate-50 p-8 rounded-lg mb-8">
+          <img src="https://kimi-img.moonshot.cn/pub/icon/spinner.svg" alt="Software development workflow process"
+            class="w-full h-64 object-cover rounded-lg mb-6" size="medium" aspect="wide"
+            query="software development workflow" referrerpolicy="no-referrer" />
+
+          <div class="mermaid-container">
+            <div class="mermaid-controls">
+              <button class="mermaid-control-btn zoom-in" title="放大">
+                <i class="fas fa-search-plus"></i>
+              </button>
+              <button class="mermaid-control-btn zoom-out" title="缩小">
+                <i class="fas fa-search-minus"></i>
+              </button>
+              <button class="mermaid-control-btn reset-zoom" title="重置">
+                <i class="fas fa-expand-arrows-alt"></i>
+              </button>
+              <button class="mermaid-control-btn fullscreen" title="全屏查看">
+                <i class="fas fa-expand"></i>
+              </button>
+            </div>
+            <div class="mermaid">
+              graph TD
+              A["Crear Directorio new-frontend"] --> B["Copiar Archivos de Nivel Raíz"]
+              B --> C["Refactorizar package.json"]
+              C --> D["Revisión de Usuario y OK"]
+              D --> E["Procesar Directorio app"]
+              E --> F["Refactorizar Páginas y Layouts"]
+              F --> G["Revisión de Usuario y OK"]
+              G --> H["Procesar Directorio components"]
+              H --> I["Refactorizar Componentes"]
+              I --> J["Revisión de Usuario y OK"]
+              J --> K["Procesar Archivos Restantes"]
+              K --> L["Revisión Final y Aprobación"]
+
+              style A fill:#e1f5fe
+              style D fill:#e8f5e8
+              style G fill:#e8f5e8
+              style J fill:#e8f5e8
+              style L fill:#fff3e0
+            </div>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="space-y-4">
+            <h3 class="font-serif text-xl font-bold text-primary">
+              <i class="fas fa-sync-alt mr-2 text-blue-500"></i>
+              Beneficios del Proceso Iterativo
+            </h3>
+            <ul class="space-y-2 text-secondary">
+              <li>• Detección temprana de problemas</li>
+              <li>• Integración continua de retroalimentación</li>
+              <li>• Calidad de código mantenida a lo largo del proceso</li>
+              <li>• Riesgo reducido de errores de refactorización mayores</li>
+              <li>• Colaboración mejorada entre IA y desarrollador</li>
+            </ul>
+          </div>
+
+          <div class="space-y-4">
+            <h3 class="font-serif text-xl font-bold text-primary">
+              <i class="fas fa-check-circle mr-2 text-green-500"></i>
+              Protocolo de Ciclo de Aprobación
+            </h3>
+            <div class="bg-warm-gray p-4 rounded-lg">
+              <p class="text-secondary mb-3">
+                Después de cada fase de refactorización, la IA se detendrá y esperará confirmación explícita "OK" antes
+                de continuar.
+              </p>
+              <div class="code-block text-sm">
+                <div class="text-yellow-300">// IA: Archivos refactorizados. Listos para revisión.</div>
+                <div class="text-green-300">// Usuario: OK</div>
+                <div class="text-yellow-300">// IA: Procediendo a la siguiente fase...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Security Section -->
+    <section id="security" class="py-16 bg-slate-50">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="font-serif text-3xl font-bold text-primary mb-8">Implementación de Seguridad</h2>
+
+        <div class="prose prose-lg max-w-none mb-8">
+          <p class="text-secondary">
+            La seguridad es primordial en el proceso de refactorización. La IA debe implementar protección completa
+            contra
+            vulnerabilidades web comunes mientras asegura que todas las entradas de usuario sean correctamente validadas
+            y sanitizadas.
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+          <div class="bg-white p-6 rounded-lg border border-slate-200">
+            <div class="text-red-500 text-2xl mb-4">
+              <i class="fas fa-shield-virus"></i>
+            </div>
+            <h3 class="font-semibold text-primary mb-2">Protección XSS</h3>
+            <p class="text-secondary text-sm">
+              Implementar sanitización de entrada y codificación de salida para prevenir ataques de Cross-Site Scripting
+              <a href="https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html"
+                class="text-blue-600 hover:underline ml-1" target="_blank">[1]</a>
+            </p>
+          </div>
+
+          <div class="bg-white p-6 rounded-lg border border-slate-200">
+            <div class="text-blue-500 text-2xl mb-4">
+              <i class="fas fa-key"></i>
+            </div>
+            <h3 class="font-semibold text-primary mb-2">Protección CSRF</h3>
+            <p class="text-secondary text-sm">
+              Implementar tokens CSRF para operaciones que cambian estado y validar encabezados de origen
+              <a href="https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html"
+                class="text-blue-600 hover:underline ml-1" target="_blank">[2]</a>
+            </p>
+          </div>
+
+          <div class="bg-white p-6 rounded-lg border border-slate-200">
+            <div class="text-green-500 text-2xl mb-4">
+              <i class="fas fa-check-double"></i>
+            </div>
+            <h3 class="font-semibold text-primary mb-2">Validación de Entrada</h3>
+            <p class="text-secondary text-sm">
+              Usar esquemas Zod para validación completa de entrada y seguridad de tipos
+              <a href="https://zod.dev/" class="text-blue-600 hover:underline ml-1" target="_blank">[3]</a>
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg border border-slate-200">
+          <h3 class="font-serif text-xl font-bold text-primary mb-4">Estrategia de Validación</h3>
+          <div class="code-block">
+            <div class="text-cyan-300">// Ejemplo: Implementación de esquema Zod</div>
+            <div class="mt-2">import { z } from 'zod';</div>
+            <div class="mt-1">const userSchema = z.object({</div>
+            <div class="ml-4">email: z.string().email(),</div>
+            <div class="ml-4">password: z.string().min(8),</div>
+            <div class="ml-4">name: z.string().min(2).max(50)</div>
+            <div>});</div>
+            <div class="text-cyan-300 mt-2">// Función de sanitización</div>
+            <div>const sanitizeInput = (input: string) => {</div>
+            <div class="ml-4">return DOMPurify.sanitize(input);</div>
+            <div>};</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Performance Section -->
+    <section id="performance" class="py-16 bg-white">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="font-serif text-3xl font-bold text-primary mb-8">Optimización de Rendimiento</h2>
+
+        <div class="grid md:grid-cols-2 gap-8 mb-8">
+          <div>
+            <h3 class="font-serif text-xl font-bold text-primary mb-4">
+              <i class="fas fa-rocket mr-2 text-purple-500"></i>
+              Técnicas de Optimización
+            </h3>
+            <div class="space-y-4">
+              <div class="flex items-start space-x-3">
+                <div class="bg-purple-100 p-2 rounded-full">
+                  <i class="fas fa-code text-purple-600 text-sm"></i>
+                </div>
+                <div>
+                  <h4 class="font-medium text-primary">División de Código</h4>
+                  <p class="text-secondary text-sm">Importaciones dinámicas para reducir el tamaño inicial del bundle
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex items-start space-x-3">
+                <div class="bg-blue-100 p-2 rounded-full">
+                  <i class="fas fa-image text-blue-600 text-sm"></i>
+                </div>
+                <div>
+                  <h4 class="font-medium text-primary">Carga Perezosa</h4>
+                  <p class="text-secondary text-sm">Cargar imágenes y recursos pesados bajo demanda</p>
+                </div>
+              </div>
+
+              <div class="flex items-start space-x-3">
+                <div class="bg-green-100 p-2 rounded-full">
+                  <i class="fas fa-memory text-green-600 text-sm"></i>
+                </div>
+                <div>
+                  <h4 class="font-medium text-primary">Memoización</h4>
+                  <p class="text-secondary text-sm">Prevenir re-renderizados innecesarios con useMemo</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <img src="https://kimi-img.moonshot.cn/pub/icon/spinner.svg" alt="Web performance optimization techniques"
+              class="w-full h-64 object-cover rounded-lg" size="medium" aspect="wide"
+              query="web performance optimization" referrerpolicy="no-referrer" />
+          </div>
+        </div>
+
+        <div class="bg-slate-50 p-6 rounded-lg">
+          <h3 class="font-serif text-xl font-bold text-primary mb-4">Lista de Verificación de Rendimiento</h3>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="flex items-center space-x-2">
+                <input type="checkbox" class="rounded text-primary" checked disabled>
+                <span class="text-secondary">Implementar importaciones dinámicas para división basada en rutas</span>
+              </label>
+              <label class="flex items-center space-x-2">
+                <input type="checkbox" class="rounded text-primary" checked disabled>
+                <span class="text-secondary">Optimizar imágenes con formato WebP</span>
+              </label>
+              <label class="flex items-center space-x-2">
+                <input type="checkbox" class="rounded text-primary" checked disabled>
+                <span class="text-secondary">Implementar estrategias de caché apropiadas</span>
+              </label>
+            </div>
+            <div class="space-y-2">
+              <label class="flex items-center space-x-2">
+                <input type="checkbox" class="rounded text-primary" checked disabled>
+                <span class="text-secondary">Minimizar re-renderizados con React.memo</span>
+              </label>
+              <label class="flex items-center space-x-2">
+                <input type="checkbox" class="rounded text-primary" checked disabled>
+                <span class="text-secondary">Implementar límites de error apropiados</span>
+              </label>
+              <label class="flex items-center space-x-2">
+                <input type="checkbox" class="rounded text-primary" checked disabled>
+                <span class="text-secondary">Optimizar análisis de tamaño del bundle</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Directory Structure -->
+    <section id="directory-structure" class="py-16 bg-slate-50">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="font-serif text-3xl font-bold text-primary mb-8">Integridad de Estructura de Directorios</h2>
+
+        <div class="prose prose-lg max-w-none mb-8">
+          <p class="text-secondary">
+            Una restricción fundamental del proceso de refactorización es la estricta preservación de la estructura de
+            carpetas del proyecto original. La IA debe replicar la jerarquía exacta de carpetas, subcarpetas y archivos
+            en el directorio new-frontend.
+          </p>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg border border-slate-200 mb-8">
+          <div class="code-block">
+            <div class="text-cyan-300">// Estructura Original del Frontend (a preservar)</div>
+            <div class="mt-2 text-green-300">frontend/</div>
+            <div class="ml-4">├── app/</div>
+            <div class="ml-8">│ ├── (public)/</div>
+            <div class="ml-12">│ │ ├── about/</div>
+            <div class="ml-12">│ │ ├── contact/</div>
+            <div class="ml-12">│ │ ├── events/</div>
+            <div class="ml-8">│ └── admin/</div>
+            <div class="ml-4">├── components/</div>
+            <div class="ml-8">│ ├── admin/</div>
+            <div class="ml-8">│ ├── public/</div>
+            <div class="ml-8">│ ├── shared/</div>
+            <div class="ml-8">│ └── ui/</div>
+            <div class="ml-4">└── lib/</div>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6">
+            <h3 class="font-semibold text-primary mb-3">
+              <i class="fas fa-exclamation-triangle mr-2 text-yellow-500"></i>
+              Restricciones de Estructura
+            </h3>
+            <ul class="space-y-2 text-secondary text-sm">
+              <li>• No reorganizar carpetas o archivos</li>
+              <li>• Preservar convenciones de nomenclatura originales</li>
+              <li>• Mantener relaciones de rutas relativas</li>
+              <li>• Replicar todos los subdirectorios exactamente</li>
+            </ul>
+          </div>
+
+          <div class="bg-green-50 border-l-4 border-green-400 p-6">
+            <h3 class="font-semibold text-primary mb-3">
+              <i class="fas fa-check-circle mr-2 text-green-500"></i>
+              Beneficios de la Preservación de Estructura
+            </h3>
+            <ul class="space-y-2 text-secondary text-sm">
+              <li>• Fácil comparación con el código base original</li>
+              <li>• Navegación familiar para desarrolladores</li>
+              <li>• Proceso de migración simplificado</li>
+              <li>• Curva de aprendizaje reducida para mantenimiento</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Implementation Guide -->
+    <section id="implementation" class="py-16 bg-white">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="font-serif text-3xl font-bold text-primary mb-8">Guía de Implementación</h2>
+
+        <div class="space-y-8">
+          <div class="bg-slate-50 p-8 rounded-lg">
+            <h3 class="font-serif text-xl font-bold text-primary mb-6">
+              <i class="fas fa-play-circle mr-3 text-green-500"></i>
+              Comenzando
+            </h3>
+
+            <ol class="space-y-4 text-secondary">
+              <li class="flex items-start">
+                <span
+                  class="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mr-4 mt-1">1</span>
+                <div>
+                  <strong>Preparar Entorno:</strong> Asegurar acceso al repositorio frontend original y confirmar nuevos
+                  endpoints de API del backend
+                  <a href="https://github.com/techsoyo/dj_josepe_webpage-node/tree/dev11sept/frontend"
+                    class="text-blue-600 hover:underline ml-2" target="_blank">[Repositorio Frontend]</a>
+                  <a href="https://github.com/techsoyo/dj_josepe_webpage_1.0/tree/dev12sept/backend"
+                    class="text-blue-600 hover:underline ml-2" target="_blank">[Repositorio Backend]</a>
+                </div>
+              </li>
+
+              <li class="flex items-start">
+                <span
+                  class="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mr-4 mt-1">2</span>
+                <div>
+                  <strong>Inicializar Proyecto:</strong> Crear directorio new-frontend y establecer control de versiones
+                  Git
+                </div>
+              </li>
+
+              <li class="flex items-start">
+                <span
+                  class="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mr-4 mt-1">3</span>
+                <div>
+                  <strong>Ejecutar Refactorización:</strong> Seguir el flujo de trabajo paso a paso con revisiones
+                  iterativas
+                </div>
+              </li>
+            </ol>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-blue-50 p-6 rounded-lg">
+              <h4 class="font-semibold text-primary mb-4">
+                <i class="fas fa-terminal mr-2 text-blue-500"></i>
+                Flujo de Trabajo de Línea de Comandos
+              </h4>
+              <div class="code-block text-sm">
+                <div class="text-cyan-300"># Clonar repositorios</div>
+                <div>git clone frontend-repo</div>
+                <div>git clone backend-repo</div>
+                <div class="text-cyan-300 mt-2"># Crear espacio de trabajo</div>
+                <div>mkdir new-frontend</div>
+                <div>cd new-frontend</div>
+                <div>git init</div>
+              </div>
+            </div>
+
+            <div class="bg-purple-50 p-6 rounded-lg">
+              <h4 class="font-semibold text-primary mb-4">
+                <i class="fas fa-cogs mr-2 text-purple-500"></i>
+                Protocolo de Interacción con IA
+              </h4>
+              <div class="space-y-2 text-secondary text-sm">
+                <div><strong>Entrada:</strong> Prompt del sistema + Prompt del usuario</div>
+                <div><strong>Proceso:</strong> Refactorización iterativa con revisiones</div>
+                <div><strong>Salida:</strong> Código base refactorizado en new-frontend</div>
+                <div><strong>Control:</strong> Se requiere aprobación del usuario en cada paso</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-green-50 border-l-4 border-green-400 p-6">
+            <h4 class="font-semibold text-primary mb-3">
+              <i class="fas fa-lightbulb mr-2 text-green-500"></i>
+              Mejores Prácticas para el Éxito
+            </h4>
+            <ul class="space-y-2 text-secondary">
+              <li>• Mantener comunicación clara con la IA a lo largo del proceso</li>
+              <li>• Revisar cada archivo refactorizado cuidadosamente antes de la aprobación</li>
+              <li>• Probar funcionalidad de manera incremental a medida que se completa cada sección</li>
+              <li>• Documentar cualquier cambio significativo o decisiones arquitectónicas</li>
+              <li>• Asegurar que todas las medidas de seguridad estén correctamente implementadas</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Conclusion -->
+    <section id="conclusion" class="py-16 bg-slate-50">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="font-serif text-3xl font-bold text-primary mb-8">Conclusión</h2>
+
+        <div class="prose prose-lg max-w-none">
+          <p class="text-secondary mb-6">
+            Esta guía completa de refactorización proporciona un enfoque estructurado para migrar un frontend Next.js
+            desde
+            un backend basado en Prisma a una arquitectura impulsada por MySQL. Siguiendo los prompts del sistema y del
+            usuario,
+            los desarrolladores pueden asegurar una transición suave mientras mantienen estándares de calidad de código,
+            seguridad y rendimiento.
+          </p>
+
+          <div class="bg-white p-8 rounded-lg border border-slate-200 mb-8">
+            <h3 class="font-serif text-xl font-bold text-primary mb-4">Puntos Clave</h3>
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <h4 class="font-semibold text-primary mb-2">Beneficios del Proceso</h4>
+                <ul class="space-y-1 text-secondary text-sm">
+                  <li>• Enfoque estructurado e iterativo</li>
+                  <li>• Integridad de código mantenida</li>
+                  <li>• Postura de seguridad mejorada</li>
+                  <li>• Características de rendimiento mejoradas</li>
+                </ul>
+              </div>
+              <div>
+                <h4 class="font-semibold text-primary mb-2">Resultados Técnicos</h4>
+                <ul class="space-y-1 text-secondary text-sm">
+                  <li>• Integración perfecta del backend</li>
+                  <li>• Lógica de aplicación preservada</li>
+                  <li>• Patrones de código modernizados</li>
+                  <li>• Despliegue listo para producción</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-center">
+            <p class="text-secondary mb-4">
+              Siguiendo esta guía, los desarrolladores pueden refactorizar sus aplicaciones frontend con confianza
+              mientras
+              mantienen los más altos estándares de calidad, seguridad y rendimiento.
+            </p>
+            <div class="inline-flex items-center space-x-4 text-sm text-secondary">
+              <span><i class="fas fa-code mr-1"></i>Next.js</span>
+              <span><i class="fas fa-database mr-1"></i>MySQL</span>
+              <span><i class="fas fa-shield-alt mr-1"></i>Secure</span>
+              <span><i class="fas fa-rocket mr-1"></i>Optimized</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Initialize Mermaid with enhanced configuration for better contrast and styling
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        // Primary colors with high contrast
+        primaryColor: '#ffffff',
+        primaryTextColor: '#1e293b',
+        primaryBorderColor: '#334155',
+
+        // Secondary colors
+        secondaryColor: '#f1f5f9',
+        secondaryTextColor: '#334155',
+        secondaryBorderColor: '#64748b',
+
+        // Tertiary colors
+        tertiaryColor: '#fff7ed',
+        tertiaryTextColor: '#9a3412',
+        tertiaryBorderColor: '#ea580c',
+
+        // Background colors
+        background: '#ffffff',
+        mainBkg: '#ffffff',
+        secondBkg: '#f8fafc',
+        tertiaryBkg: '#fff7ed',
+
+        // Line and edge styling
+        lineColor: '#64748b',
+        edgeLabelBackground: '#ffffff',
+
+        // Node-specific colors with high contrast
+        cScale0: '#e1f5fe',
+        cScale1: '#e8f5e8',
+        cScale2: '#fff3e0',
+        cScale3: '#fce7f3',
+        cScale4: '#f0f9ff',
+
+        // Text colors for different node types
+        c0: '#1e293b',
+        c1: '#1e293b',
+        c2: '#1e293b',
+        c3: '#1e293b',
+        c4: '#1e293b',
+
+        // Additional contrast improvements
+        nodeBorder: '#334155',
+        clusterBkg: '#f8fafc',
+        clusterBorder: '#cbd5e1',
+        defaultLinkColor: '#64748b',
+        titleColor: '#1e293b',
+
+        // Grid and axis
+        gridColor: '#e2e8f0',
+        section0: '#f8fafc',
+        section1: '#f1f5f9',
+        section2: '#e2e8f0',
+        section3: '#cbd5e1',
+
+        // Active/hover states
+        activeTaskBkgColor: '#dbeafe',
+        activeTaskBorderColor: '#3b82f6',
+
+        // Error and warning states
+        errorBkgColor: '#fef2f2',
+        errorTextColor: '#991b1b',
+        warningBkgColor: '#fffbeb',
+        warningTextColor: '#92400e'
+      },
+      flowchart: {
+        useMaxWidth: false,
+        htmlLabels: true,
+        curve: 'basis',
+        padding: 20,
+        nodeSpacing: 50,
+        rankSpacing: 50,
+        diagramPadding: 20
+      },
+      fontFamily: 'Inter, sans-serif',
+      fontSize: 14,
+      securityLevel: 'loose'
+    });
+
+    // Initialize Mermaid Controls for zoom and pan
+    function initializeMermaidControls() {
+      const containers = document.querySelectorAll('.mermaid-container');
+
+      containers.forEach(container => {
+        const mermaidElement = container.querySelector('.mermaid');
+        let scale = 1;
+        let isDragging = false;
+        let startX, startY, translateX = 0, translateY = 0;
+
+        // 触摸相关状态
+        let isTouch = false;
+        let touchStartTime = 0;
+        let initialDistance = 0;
+        let initialScale = 1;
+        let isPinching = false;
+
+        // Zoom controls
+        const zoomInBtn = container.querySelector('.zoom-in');
+        const zoomOutBtn = container.querySelector('.zoom-out');
+        const resetBtn = container.querySelector('.reset-zoom');
+        const fullscreenBtn = container.querySelector('.fullscreen');
+
+        function updateTransform() {
+          mermaidElement.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+
+          if (scale > 1) {
+            container.classList.add('zoomed');
+          } else {
+            container.classList.remove('zoomed');
+          }
+
+          mermaidElement.style.cursor = isDragging ? 'grabbing' : 'grab';
+        }
+
+        if (zoomInBtn) {
+          zoomInBtn.addEventListener('click', () => {
+            scale = Math.min(scale * 1.25, 4);
+            updateTransform();
+          });
+        }
+
+        if (zoomOutBtn) {
+          zoomOutBtn.addEventListener('click', () => {
+            scale = Math.max(scale / 1.25, 0.3);
+            if (scale <= 1) {
+              translateX = 0;
+              translateY = 0;
+            }
+            updateTransform();
+          });
+        }
+
+        if (resetBtn) {
+          resetBtn.addEventListener('click', () => {
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
+          });
+        }
+
+        if (fullscreenBtn) {
+          fullscreenBtn.addEventListener('click', () => {
+            if (container.requestFullscreen) {
+              container.requestFullscreen();
+            } else if (container.webkitRequestFullscreen) {
+              container.webkitRequestFullscreen();
+            } else if (container.msRequestFullscreen) {
+              container.msRequestFullscreen();
+            }
+          });
+        }
+
+        // Mouse Events
+        mermaidElement.addEventListener('mousedown', (e) => {
+          if (isTouch) return; // 如果是触摸设备，忽略鼠标事件
+
+          isDragging = true;
+          startX = e.clientX - translateX;
+          startY = e.clientY - translateY;
+          mermaidElement.style.cursor = 'grabbing';
+          updateTransform();
+          e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+          if (isDragging && !isTouch) {
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateTransform();
+          }
+        });
+
+        document.addEventListener('mouseup', () => {
+          if (isDragging && !isTouch) {
+            isDragging = false;
+            mermaidElement.style.cursor = 'grab';
+            updateTransform();
+          }
+        });
+
+        document.addEventListener('mouseleave', () => {
+          if (isDragging && !isTouch) {
+            isDragging = false;
+            mermaidElement.style.cursor = 'grab';
+            updateTransform();
+          }
+        });
+
+        // 获取两点之间的距离
+        function getTouchDistance(touch1, touch2) {
+          return Math.hypot(
+            touch2.clientX - touch1.clientX,
+            touch2.clientY - touch1.clientY
+          );
+        }
+
+        // Touch Events - 触摸事件处理
+        mermaidElement.addEventListener('touchstart', (e) => {
+          isTouch = true;
+          touchStartTime = Date.now();
+
+          if (e.touches.length === 1) {
+            // 单指拖动
+            isPinching = false;
+            isDragging = true;
+
+            const touch = e.touches[0];
+            startX = touch.clientX - translateX;
+            startY = touch.clientY - translateY;
+
+          } else if (e.touches.length === 2) {
+            // 双指缩放
+            isPinching = true;
+            isDragging = false;
+
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            initialDistance = getTouchDistance(touch1, touch2);
+            initialScale = scale;
+          }
+
+          e.preventDefault();
+        }, { passive: false });
+
+        mermaidElement.addEventListener('touchmove', (e) => {
+          if (e.touches.length === 1 && isDragging && !isPinching) {
+            // 单指拖动
+            const touch = e.touches[0];
+            translateX = touch.clientX - startX;
+            translateY = touch.clientY - startY;
+            updateTransform();
+
+          } else if (e.touches.length === 2 && isPinching) {
+            // 双指缩放
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const currentDistance = getTouchDistance(touch1, touch2);
+
+            if (initialDistance > 0) {
+              const newScale = Math.min(Math.max(
+                initialScale * (currentDistance / initialDistance),
+                0.3
+              ), 4);
+              scale = newScale;
+              updateTransform();
+            }
+          }
+
+          e.preventDefault();
+        }, { passive: false });
+
+        mermaidElement.addEventListener('touchend', (e) => {
+          // 重置状态
+          if (e.touches.length === 0) {
+            isDragging = false;
+            isPinching = false;
+            initialDistance = 0;
+
+            // 延迟重置isTouch，避免鼠标事件立即触发
+            setTimeout(() => {
+              isTouch = false;
+            }, 100);
+          } else if (e.touches.length === 1 && isPinching) {
+            // 从双指变为单指，切换为拖动模式
+            isPinching = false;
+            isDragging = true;
+
+            const touch = e.touches[0];
+            startX = touch.clientX - translateX;
+            startY = touch.clientY - translateY;
+          }
+
+          updateTransform();
+        });
+
+        mermaidElement.addEventListener('touchcancel', (e) => {
+          isDragging = false;
+          isPinching = false;
+          initialDistance = 0;
+
+          setTimeout(() => {
+            isTouch = false;
+          }, 100);
+
+          updateTransform();
+        });
+
+        // Enhanced wheel zoom with better center point handling
+        container.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          const rect = container.getBoundingClientRect();
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+
+          const delta = e.deltaY > 0 ? 0.9 : 1.1;
+          const newScale = Math.min(Math.max(scale * delta, 0.3), 4);
+
+          // Adjust translation to zoom towards center
+          if (newScale !== scale) {
+            const scaleDiff = newScale / scale;
+            translateX = translateX * scaleDiff;
+            translateY = translateY * scaleDiff;
+            scale = newScale;
+
+            if (scale <= 1) {
+              translateX = 0;
+              translateY = 0;
+            }
+
+            updateTransform();
+          }
+        });
+
+        // Initialize display
+        updateTransform();
+      });
+    }
+
+    // Initialize mermaid controls after DOM is loaded
+    document.addEventListener('DOMContentLoaded', initializeMermaidControls);
+
+    // Smooth scrolling for TOC links
+    document.querySelectorAll('.toc-link').forEach(link => {
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href').substring(1);
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    });
+
+    // Toggle workflow step details
+    function toggleDetails(id) {
+      const element = document.getElementById(id);
+      const icon = element.previousElementSibling.querySelector('.fa-chevron-down');
+
+      if (element.classList.contains('hidden')) {
+        element.classList.remove('hidden');
+        icon.classList.add('rotate-180');
+      } else {
+        element.classList.add('hidden');
+        icon.classList.remove('rotate-180');
+      }
+    }
+
+    // Mobile menu toggle (if needed)
+    function toggleMobileMenu() {
+      const toc = document.querySelector('.toc-fixed');
+      toc.classList.toggle('open');
+    }
+  </script>
+</body>
+
+</html>

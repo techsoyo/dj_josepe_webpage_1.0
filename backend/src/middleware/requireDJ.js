@@ -1,3 +1,4 @@
+// backend/src/middleware/requireDJ.js
 import { verifyToken } from '../utils/auth.js';
 
 export default function requireDJ(req, res, next) {

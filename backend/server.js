@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import dotenv from 'dotenv';
 import mysql from 'mysql2/promise';
+import authRoutes from './src/routes/auth.routes.js';
 
 // Import middleware
 import { errorHandler } from './src/middleware/errorHandler.js';
@@ -30,6 +31,8 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+app.use('/api', authRoutes);   
 
 // MySQL connection configuration
 const dbConfig = {
